@@ -312,6 +312,18 @@ class ExpenseStore {
 		}
 	}
 
+	async updateCategory(id: number, name: string, monthlyLimit?: number | null) {
+		try {
+			const updated = await api.put<Category>(`/api/categories/${id}`, { name, monthlyLimit });
+			await this.fetchCategories();
+			await this.fetchStats();
+			return updated;
+		} catch (err) {
+			console.error('Failed to update category:', err);
+			throw err;
+		}
+	}
+
 	getCategoryName(id: number): string {
 		return this.categories.find((c) => c.id === id)?.name ?? 'ไม่ระบุ';
 	}

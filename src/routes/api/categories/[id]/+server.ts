@@ -7,7 +7,7 @@ export const PUT: RequestHandler = async (event) => {
 	try {
 		const payload = await authenticate(event);
 		const id = parseInt(event.params.id || '', 10);
-		const { name } = await event.request.json();
+		const { name, monthlyLimit } = await event.request.json();
 
 		if (isNaN(id) || !name) {
 			return json({ error: 'Invalid ID or category name' }, { status: 400 });
@@ -16,8 +16,11 @@ export const PUT: RequestHandler = async (event) => {
 		// Update category in database
 		const updatedCategory = await prisma.category.update({
 			where: { id, userId: payload.userId },
-			data: { name },
-			select: { id: true, name: true }
+			data: {
+				name,
+				monthlyLimit: monthlyLimit !== undefined ? (monthlyLimit ? Number(monthlyLimit) : null) : undefined
+			},
+			select: { id: true, name: true, monthlyLimit: true }
 		});
 
 		return json(updatedCategory);

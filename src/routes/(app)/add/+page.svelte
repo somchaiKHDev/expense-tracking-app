@@ -24,6 +24,39 @@
 	let descriptionInput = $state<HTMLInputElement>();
 	let newCategoryInput = $state<HTMLInputElement>();
 
+	let showEditLimit = $state(false);
+	let editLimitValue = $state<number | ''>('');
+	let editCategoryName = $state('');
+	let updatingLimit = $state(false);
+	let editLimitError = $state('');
+
+	$effect(() => {
+		if (categoryId) {
+			const selectedCat = store.categories.find((c) => c.id === Number(categoryId));
+			if (selectedCat) {
+				editLimitValue = selectedCat.monthlyLimit ?? '';
+				editCategoryName = selectedCat.name;
+			}
+		} else {
+			showEditLimit = false;
+		}
+	});
+
+	async function handleUpdateLimit() {
+		if (!categoryId) return;
+		updatingLimit = true;
+		editLimitError = '';
+		try {
+			const limit = typeof editLimitValue === 'number' ? editLimitValue : null;
+			await store.updateCategory(Number(categoryId), editCategoryName, limit);
+			showEditLimit = false;
+		} catch {
+			editLimitError = 'ไม่สามารถแก้ไขวงเงินได้';
+		} finally {
+			updatingLimit = false;
+		}
+	}
+
 	async function handleAddCategory() {
 		const trimmed = newCategoryName.trim();
 		if (!trimmed) return;
@@ -191,23 +224,48 @@
 					<label for="category" class="block text-sm font-semibold text-gray-600">
 						หมวดหมู่ <span class="text-red-500">*</span>
 					</label>
-					<button
-						type="button"
-						onclick={() => {
-							showAddCategory = !showAddCategory;
-							addCategoryError = '';
-							if (showAddCategory) setTimeout(() => newCategoryInput?.focus(), 50);
-						}}
-						class="add-cat-btn"
-						title="เพิ่มหมวดหมู่ใหม่"
-					>
-						{#if showAddCategory}
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-						{:else}
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+					<div class="flex items-center gap-2">
+						{#if categoryId}
+							<button
+								type="button"
+								onclick={() => {
+									showEditLimit = !showEditLimit;
+									showAddCategory = false;
+									editLimitError = '';
+									const selectedCat = store.categories.find(c => c.id === Number(categoryId));
+									if (selectedCat) {
+										editLimitValue = selectedCat.monthlyLimit ?? '';
+										editCategoryName = selectedCat.name;
+									}
+								}}
+								class="edit-limit-btn"
+								title="แก้ไขวงเงินหมวดหมู่ที่เลือก"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+								</svg>
+								แก้ไขวงเงิน
+							</button>
 						{/if}
-						เพิ่มหมวดหมู่
-					</button>
+						<button
+							type="button"
+							onclick={() => {
+								showAddCategory = !showAddCategory;
+								showEditLimit = false;
+								addCategoryError = '';
+								if (showAddCategory) setTimeout(() => newCategoryInput?.focus(), 50);
+							}}
+							class="add-cat-btn"
+							title="เพิ่มหมวดหมู่ใหม่"
+						>
+							{#if showAddCategory}
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+							{:else}
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+							{/if}
+							เพิ่มหมวดหมู่
+						</button>
+					</div>
 				</div>
 
 				<select
@@ -221,6 +279,46 @@
 						<option value={cat.id}>{cat.name}{cat.monthlyLimit ? ` (วงเงิน: ${cat.monthlyLimit} บ.)` : ''}</option>
 					{/each}
 				</select>
+ 
+				{#if showEditLimit && categoryId}
+					<div class="edit-limit-panel animate-fadeIn">
+						<div class="flex items-center gap-2">
+							<span class="text-xs text-gray-500 font-medium">แก้ไขวงเงิน "{editCategoryName}":</span>
+							<input
+								bind:value={editLimitValue}
+								type="number"
+								placeholder="ไม่มีวงเงิน"
+								class="add-cat-input w-28"
+								min="0"
+								step="1"
+								disabled={updatingLimit}
+								onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleUpdateLimit(); } }}
+							/>
+							<button
+								type="button"
+								onclick={handleUpdateLimit}
+								disabled={updatingLimit}
+								class="add-cat-submit"
+							>
+								{#if updatingLimit}
+									<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+								{:else}
+									บันทึก
+								{/if}
+							</button>
+							<button
+								type="button"
+								onclick={() => { showEditLimit = false; }}
+								class="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+							>
+								ยกเลิก
+							</button>
+						</div>
+						{#if editLimitError}
+							<p class="text-xs text-red-500 mt-1.5">{editLimitError}</p>
+						{/if}
+					</div>
+				{/if}
 
 				{#if showAddCategory}
 					<div class="add-cat-panel animate-fadeIn">
@@ -325,6 +423,34 @@
 
 	.animate-spin {
 		animation: spin 0.7s linear infinite;
+	}
+
+	/* Edit limit button */
+	.edit-limit-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: #4b5563;
+		background: #f3f4f6;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		padding: 0.2rem 0.55rem;
+		cursor: pointer;
+		transition: background 0.15s, color 0.15s;
+	}
+	.edit-limit-btn:hover {
+		background: #e5e7eb;
+		color: #1f2937;
+	}
+
+	.edit-limit-panel {
+		margin-top: 0.5rem;
+		padding: 0.65rem 0.75rem;
+		background: #f9fafb;
+		border: 1px dashed #d1d5db;
+		border-radius: 8px;
 	}
 
 	/* Add category button */
