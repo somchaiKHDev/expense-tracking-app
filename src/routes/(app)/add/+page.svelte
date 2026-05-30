@@ -14,18 +14,15 @@
 	let categoryId = $state<number | ''>('');
 	let amount = $state<number | ''>('');
 	let transactionDate = $state(getLocalISODate());
-
-	let successMessage = $state('');
 	let errorMessage = $state('');
-	let descriptionInput: HTMLInputElement;
-
-	// Add category inline
+	let successMessage = $state('');
 	let showAddCategory = $state(false);
 	let newCategoryName = $state('');
 	let newCategoryLimit = $state<number | ''>('');
 	let addingCategory = $state(false);
 	let addCategoryError = $state('');
-	let newCategoryInput: HTMLInputElement;
+	let descriptionInput = $state<HTMLInputElement>();
+	let newCategoryInput = $state<HTMLInputElement>();
 
 	async function handleAddCategory() {
 		const trimmed = newCategoryName.trim();
