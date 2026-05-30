@@ -3,16 +3,50 @@
 	import { PrefixChips } from '$lib/components/expense';
 	import { useExpenseStore, type ItemPrefix } from '$lib/stores/expenseStore.svelte';
 
+	function getLocalISODate() {
+		const tzOffset = new Date().getTimezoneOffset() * 60000;
+		return new Date(Date.now() - tzOffset).toISOString().slice(0, 10);
+	}
+
 	const store = useExpenseStore();
 
 	let description = $state('');
 	let categoryId = $state<number | ''>('');
 	let amount = $state<number | ''>('');
-	let transactionDate = $state(new Date().toISOString().split('T')[0]);
+	let transactionDate = $state(getLocalISODate());
 
 	let successMessage = $state('');
 	let errorMessage = $state('');
 	let descriptionInput: HTMLInputElement;
+
+	// Add category inline
+	let showAddCategory = $state(false);
+	let newCategoryName = $state('');
+	let newCategoryLimit = $state<number | ''>('');
+	let addingCategory = $state(false);
+	let addCategoryError = $state('');
+	let newCategoryInput: HTMLInputElement;
+
+	async function handleAddCategory() {
+		const trimmed = newCategoryName.trim();
+		if (!trimmed) return;
+		addingCategory = true;
+		addCategoryError = '';
+		try {
+			const limit = typeof newCategoryLimit === 'number' ? newCategoryLimit : null;
+			const addedCategory = await store.addCategory(trimmed, limit);
+			if (addedCategory) {
+				categoryId = addedCategory.id;
+			}
+			newCategoryName = '';
+			newCategoryLimit = '';
+			showAddCategory = false;
+		} catch {
+			addCategoryError = 'ไม่สามารถเพิ่มหมวดหมู่ได้ (อาจซ้ำกับที่มีอยู่)';
+		} finally {
+			addingCategory = false;
+		}
+	}
 
 	function handlePrefixSelect(prefix: ItemPrefix) {
 		description = prefix.prefix_text + ' ';
@@ -64,7 +98,7 @@
 		description = '';
 		categoryId = '';
 		amount = '';
-		transactionDate = new Date().toISOString().split('T')[0];
+		transactionDate = getLocalISODate();
 
 		// Clear success after 3s
 		setTimeout(() => {
@@ -76,7 +110,7 @@
 		description = '';
 		categoryId = '';
 		amount = '';
-		transactionDate = new Date().toISOString().split('T')[0];
+		transactionDate = getLocalISODate();
 		errorMessage = '';
 		successMessage = '';
 	}
@@ -156,9 +190,29 @@
 
 			<!-- Category -->
 			<div class="mb-5">
-				<label for="category" class="block text-sm font-semibold text-gray-600 mb-1.5">
-					หมวดหมู่ <span class="text-red-500">*</span>
-				</label>
+				<div class="flex items-center justify-between mb-1.5">
+					<label for="category" class="block text-sm font-semibold text-gray-600">
+						หมวดหมู่ <span class="text-red-500">*</span>
+					</label>
+					<button
+						type="button"
+						onclick={() => {
+							showAddCategory = !showAddCategory;
+							addCategoryError = '';
+							if (showAddCategory) setTimeout(() => newCategoryInput?.focus(), 50);
+						}}
+						class="add-cat-btn"
+						title="เพิ่มหมวดหมู่ใหม่"
+					>
+						{#if showAddCategory}
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+						{:else}
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+						{/if}
+						เพิ่มหมวดหมู่
+					</button>
+				</div>
+
 				<select
 					id="category"
 					bind:value={categoryId}
@@ -167,9 +221,50 @@
 				>
 					<option value="" disabled>-- เลือกหมวดหมู่ค่าใช้จ่าย --</option>
 					{#each store.categories as cat (cat.id)}
-						<option value={cat.id}>{cat.name}</option>
+						<option value={cat.id}>{cat.name}{cat.monthlyLimit ? ` (วงเงิน: ${cat.monthlyLimit} บ.)` : ''}</option>
 					{/each}
 				</select>
+
+				{#if showAddCategory}
+					<div class="add-cat-panel animate-fadeIn">
+						<div class="flex gap-2">
+							<input
+								bind:this={newCategoryInput}
+								bind:value={newCategoryName}
+								type="text"
+								placeholder="ชื่อหมวดหมู่ใหม่..."
+								class="add-cat-input flex-1"
+								disabled={addingCategory}
+								onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); } }}
+							/>
+							<input
+								bind:value={newCategoryLimit}
+								type="number"
+								placeholder="วงเงิน/ด"
+								class="add-cat-input w-24"
+								min="0"
+								step="1"
+								disabled={addingCategory}
+								onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); } }}
+							/>
+							<button
+								type="button"
+								onclick={handleAddCategory}
+								disabled={addingCategory || !newCategoryName.trim()}
+								class="add-cat-submit"
+							>
+								{#if addingCategory}
+									<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+								{:else}
+									เพิ่ม
+								{/if}
+							</button>
+						</div>
+						{#if addCategoryError}
+							<p class="text-xs text-red-500 mt-1.5">{addCategoryError}</p>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Amount -->
@@ -223,7 +318,80 @@
 		to { opacity: 1; transform: translateY(0); }
 	}
 
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
 	.animate-fadeIn {
 		animation: fadeIn 0.3s ease-out;
+	}
+
+	.animate-spin {
+		animation: spin 0.7s linear infinite;
+	}
+
+	/* Add category button */
+	.add-cat-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: #2A5A43;
+		background: #f0f7f4;
+		border: 1px solid #c6dfd5;
+		border-radius: 6px;
+		padding: 0.2rem 0.55rem;
+		cursor: pointer;
+		transition: background 0.15s, color 0.15s;
+	}
+	.add-cat-btn:hover {
+		background: #d9ede5;
+		color: #1F4332;
+	}
+
+	/* Inline add panel */
+	.add-cat-panel {
+		margin-top: 0.5rem;
+		padding: 0.65rem 0.75rem;
+		background: #f8fdf9;
+		border: 1px dashed #9ecdb7;
+		border-radius: 8px;
+	}
+
+	.add-cat-input {
+		flex: 1;
+		padding: 0.45rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		font-size: 0.8rem;
+		outline: none;
+		transition: border-color 0.15s, box-shadow 0.15s;
+	}
+	.add-cat-input:focus {
+		border-color: #2A5A43;
+		box-shadow: 0 0 0 2px rgba(42,90,67,0.15);
+	}
+
+	.add-cat-submit {
+		padding: 0.45rem 1rem;
+		background: #2A5A43;
+		color: white;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		transition: background 0.15s;
+		white-space: nowrap;
+	}
+	.add-cat-submit:hover:not(:disabled) {
+		background: #1F4332;
+	}
+	.add-cat-submit:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 </style>

@@ -64,21 +64,29 @@
 		const val = (e.target as HTMLSelectElement).value;
 		store.filterCategoryId = val ? Number(val) : null;
 		store.currentPage = 1;
+		store.fetchExpenses();
 	}
 
-	function handleSearch(e: Event) {
-		store.searchQuery = (e.target as HTMLInputElement).value;
-		store.currentPage = 1;
+	let localSearchQuery = $state(store.searchQuery);
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			store.searchQuery = localSearchQuery;
+			store.currentPage = 1;
+			store.fetchExpenses();
+		}
 	}
 
 	function handleStartDate(e: Event) {
 		store.filterStartDate = (e.target as HTMLInputElement).value;
 		store.currentPage = 1;
+		store.fetchExpenses();
 	}
 
 	function handleEndDate(e: Event) {
 		store.filterEndDate = (e.target as HTMLInputElement).value;
 		store.currentPage = 1;
+		store.fetchExpenses();
 	}
 
 	function exportCSV() {
@@ -139,9 +147,10 @@
 				</span>
 				<input
 					type="text"
-					placeholder="ค้นหาตามรายละเอียดรายการ..."
-					value={store.searchQuery}
-					oninput={handleSearch}
+					placeholder="ค้นหาตามรายละเอียดรายการ... (กด Enter เพื่อค้นหา)"
+					bind:value={localSearchQuery}
+					onkeydown={handleKeyDown}
+					enterkeyhint="search"
 					class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#2A5A43] text-sm"
 				/>
 			</div>
@@ -154,7 +163,7 @@
 				>
 					<option value="">-- ทุกหมวดหมู่ --</option>
 					{#each store.categories as cat (cat.id)}
-						<option value={cat.id}>{cat.name}</option>
+						<option value={cat.id}>{cat.name}{cat.monthlyLimit ? ` (วงเงิน: ${cat.monthlyLimit} บ.)` : ''}</option>
 					{/each}
 				</select>
 
@@ -276,7 +285,7 @@
 			totalPages={store.totalPages}
 			totalItems={store.totalFilteredExpenses}
 			pageSize={store.pageSize}
-			onpagechange={(p) => (store.currentPage = p)}
+			onpagechange={(p) => { store.currentPage = p; store.fetchExpenses(); }}
 		/>
 	</div>
 </div>
@@ -296,7 +305,7 @@
 			<label for="edit-cat" class="block text-sm font-semibold text-gray-600 mb-1">หมวดหมู่</label>
 			<select id="edit-cat" bind:value={editCategoryId} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2A5A43]">
 				{#each store.categories as cat (cat.id)}
-					<option value={cat.id}>{cat.name}</option>
+					<option value={cat.id}>{cat.name}{cat.monthlyLimit ? ` (วงเงิน: ${cat.monthlyLimit} บ.)` : ''}</option>
 				{/each}
 			</select>
 		</div>

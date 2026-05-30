@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { signOut } from '@auth/sveltekit/client';
 
 	const navItems = [
 		{ href: '/', label: 'ภาพรวม', icon: 'chart-pie' },
@@ -9,6 +10,14 @@
 
 	let mobileMenuOpen = $state(false);
 	let currentPath = $derived($page.url.pathname);
+
+	// Get session from page data (provided by root +layout.server.ts)
+	let session = $derived($page.data.session);
+	let user = $derived(session?.user);
+
+	async function handleSignOut() {
+		await signOut({ callbackUrl: '/login' });
+	}
 </script>
 
 <nav class="expense-navbar shadow-md">
@@ -42,11 +51,29 @@
 				</div>
 			</div>
 
+			<!-- User Info + Logout (Desktop) -->
 			<div class="hidden md:flex items-center gap-3">
-				<div class="text-sm bg-[#1F4332] px-3 py-1.5 rounded-md border border-green-700 text-white flex items-center gap-2">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-					v3 System
-				</div>
+				{#if user}
+					<!-- Avatar -->
+					<div class="user-info">
+						{#if user.image}
+							<img src={user.image} alt={user.name ?? 'User'} class="avatar" referrerpolicy="no-referrer" />
+						{:else}
+							<div class="avatar-placeholder">
+								{(user.name ?? user.email ?? '?')[0].toUpperCase()}
+							</div>
+						{/if}
+						<span class="user-name">{user.name ?? user.email}</span>
+					</div>
+
+					<!-- Sign out button -->
+					<button class="signout-btn" onclick={handleSignOut} id="signout-btn" title="ออกจากระบบ">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+						</svg>
+						ออกจากระบบ
+					</button>
+				{/if}
 			</div>
 
 			<!-- Mobile menu button -->
@@ -78,6 +105,14 @@
 						{item.label}
 					</a>
 				{/each}
+				{#if user}
+					<div class="mobile-user-info">
+						<span class="text-white/70 text-sm">{user.name ?? user.email}</span>
+					</div>
+					<button class="signout-btn w-full mt-2" onclick={handleSignOut}>
+						ออกจากระบบ
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -109,5 +144,73 @@
 	.nav-link-active {
 		background-color: #1F4332;
 		color: white;
+	}
+
+	/* User info */
+	.user-info {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		padding: 0.375rem 0.625rem;
+		background: rgba(255,255,255,0.08);
+		border-radius: 10px;
+		border: 1px solid rgba(255,255,255,0.12);
+	}
+
+	.avatar {
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	.avatar-placeholder {
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #6366f1, #8b5cf6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: white;
+	}
+
+	.user-name {
+		font-size: 0.85rem;
+		color: rgba(255,255,255,0.9);
+		font-weight: 500;
+		max-width: 140px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Sign out button */
+	.signout-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.375rem;
+		padding: 0.4rem 0.875rem;
+		background: rgba(239, 68, 68, 0.15);
+		color: #fca5a5;
+		border: 1px solid rgba(239, 68, 68, 0.25);
+		border-radius: 8px;
+		font-size: 0.82rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.signout-btn:hover {
+		background: rgba(239, 68, 68, 0.28);
+		color: #fecaca;
+		border-color: rgba(239, 68, 68, 0.4);
+	}
+
+	.mobile-user-info {
+		padding: 0.5rem 0.75rem;
 	}
 </style>

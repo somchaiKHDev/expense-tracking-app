@@ -156,26 +156,98 @@
 		ctx.fillText('ยอดรวมเดือนนี้', centerX, centerY + 14);
 
 		// Legend
-		const legendY = centerY + radius + 30;
-		const legendItemWidth = 120;
-		const totalWidth = data.length * legendItemWidth;
-		let legendX = Math.max(10, (w - totalWidth) / 2);
+		ctx.font = '11px Sarabun, sans-serif';
+		const lines: Array<{items: any[], width: number}> = [];
+		let currentLine: any[] = [];
+		let currentLineWidth = 0;
 
 		data.forEach((d) => {
-			// Color box
-			ctx.fillStyle = d.color;
-			ctx.fillRect(legendX, legendY, 10, 10);
-
-			// Label
-			ctx.fillStyle = '#6B7280';
-			ctx.font = '11px Sarabun, sans-serif';
-			ctx.textAlign = 'left';
 			const pct = ((d.amount / total) * 100).toFixed(0);
-			ctx.fillText(`${d.name} (${pct}%)`, legendX + 14, legendY + 9);
+			const text = `${d.name} (${pct}%)`;
+			const textWidth = ctx.measureText(text).width;
+			const itemWidth = 14 + textWidth + 15; // Box(10) + gap(4) + textWidth + right padding(15)
 
-			legendX += legendItemWidth;
+			if (currentLineWidth + itemWidth > w - 20 && currentLine.length > 0) {
+				lines.push({ items: currentLine, width: currentLineWidth });
+				currentLine = [{ ...d, text, itemWidth }];
+				currentLineWidth = itemWidth;
+			} else {
+				currentLine.push({ ...d, text, itemWidth });
+				currentLineWidth += itemWidth;
+			}
+		});
+		if (currentLine.length > 0) {
+			lines.push({ items: currentLine, width: currentLineWidth });
+		}
+
+		let legendY = centerY + radius + 25;
+		lines.forEach(line => {
+			const actualLineWidth = line.width - 15;
+			let legendX = Math.max(10, (w - actualLineWidth) / 2);
+
+			line.items.forEach(item => {
+				ctx.fillStyle = item.color;
+				ctx.fillRect(legendX, legendY, 10, 10);
+
+				ctx.fillStyle = '#6B7280';
+				ctx.textAlign = 'left';
+				ctx.fillText(item.text, legendX + 14, legendY + 9);
+
+				legendX += item.itemWidth;
+			});
+			legendY += 18;
 		});
 	}
+
+	const budgetedCategories = $derived.by(() => {
+		return store.categories
+			.filter((c) => c.monthlyLimit !== null && c.monthlyLimit !== undefined && c.monthlyLimit > 0)
+			.map((c) => {
+				const limit = c.monthlyLimit || 0;
+				const breakdown = store.monthlyCategoryBreakdown.find((b) => b.category_id === c.id);
+				const spent = breakdown ? breakdown.amount : 0;
+				const remaining = Math.max(0, limit - spent);
+				const percent = limit > 0 ? (spent / limit) * 100 : 0;
+
+				let statusText = 'ปกติ';
+				let textClass = 'text-emerald-700';
+				let badgeBg = 'bg-emerald-50';
+				let cardBg = 'bg-white';
+				let borderColor = 'border-gray-100';
+				let progressBarColor = 'bg-emerald-600';
+
+				if (spent > limit) {
+					statusText = 'เกินวงเงิน';
+					textClass = 'text-red-700';
+					badgeBg = 'bg-red-50';
+					cardBg = 'bg-red-50/20';
+					borderColor = 'border-red-100';
+					progressBarColor = 'bg-red-600';
+				} else if (percent >= 80) {
+					statusText = 'ใกล้เต็ม';
+					textClass = 'text-amber-700';
+					badgeBg = 'bg-amber-50';
+					cardBg = 'bg-amber-50/20';
+					borderColor = 'border-amber-100';
+					progressBarColor = 'bg-amber-500';
+				}
+
+				return {
+					id: c.id,
+					name: c.name,
+					limit,
+					spent,
+					remaining,
+					percent,
+					statusText,
+					textClass,
+					badgeBg,
+					cardBg,
+					borderColor,
+					progressBarColor
+				};
+			});
+	});
 
 	onMount(() => {
 		chartsReady = true;
@@ -281,5 +353,55 @@
 				<canvas bind:this={donutCanvas} class="w-full h-full"></canvas>
 			</div>
 		</div>
+	</section>
+
+	<!-- Category Budget Dashboard Section -->
+	<section class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+		<div class="flex items-center justify-between mb-6">
+			<h3 class="font-bold text-gray-700 text-lg flex items-center gap-2 font-sarabun">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#2A5A43]" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+				</svg>
+				ภาพรวมการควบคุมวงเงิน (Budget Tracking)
+			</h3>
+			<span class="text-xs bg-[#EAF2ED] text-[#2A5A43] px-2.5 py-1 rounded-full font-medium font-sarabun">รอบปัจจุบัน: เดือนนี้</span>
+		</div>
+
+		{#if budgetedCategories.length === 0}
+			<div class="text-center py-8 text-gray-500 text-sm font-sarabun">
+				<p>ยังไม่มีหมวดหมู่ที่ตั้งวงเงินงบประมาณไว้</p>
+				<p class="text-xs text-gray-400 mt-1">สามารถกำหนดวงเงินของหมวดหมู่ได้ที่หน้าจัดการหมวดหมู่</p>
+			</div>
+		{:else}
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{#each budgetedCategories as cat}
+					<div class="p-5 rounded-xl border transition-all duration-200 hover:shadow-md font-sarabun {cat.cardBg} {cat.borderColor}">
+						<div class="flex justify-between items-start mb-2">
+							<div>
+								<h4 class="font-bold text-gray-800 text-base">{cat.name}</h4>
+								<p class="text-xs text-gray-500 mt-0.5">
+									คงเหลือ: <span class="font-bold {cat.textClass}">฿{formatCurrency(cat.remaining)}</span>
+								</p>
+							</div>
+							<div class="text-right">
+								<span class="text-xs px-2.5 py-1 rounded-full font-bold {cat.badgeBg} {cat.textClass}">
+									{cat.statusText}
+								</span>
+							</div>
+						</div>
+
+						<!-- Progress Bar -->
+						<div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden mt-3 mb-2">
+							<div class="h-full rounded-full transition-all duration-500 {cat.progressBarColor}" style="width: {Math.min(cat.percent, 100)}%"></div>
+						</div>
+
+						<div class="flex justify-between items-center text-xs text-gray-500">
+							<span>ใช้ไปแล้ว: <span class="font-semibold text-gray-700">฿{formatCurrency(cat.spent)}</span></span>
+							<span>วงเงิน: <span class="font-semibold text-gray-700">฿{formatCurrency(cat.limit)}</span> ({cat.percent.toFixed(0)}%)</span>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</section>
 </div>
