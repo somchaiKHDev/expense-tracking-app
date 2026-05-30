@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ภาพรวมระบบ - Expense Tracking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'forest-green': '#2A5A43',
+                        'forest-green-hover': '#1F4332',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #F8F9FA; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-forest-green text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-wallet text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-wide mr-8">Expense Tracking</span>
+                    <div class="hidden md:flex space-x-4 text-sm">
+                        <a href="dashboard.html" class="bg-forest-green-hover px-3 py-2 rounded-md font-medium text-white"><i class="fa-solid fa-chart-pie mr-1.5"></i>ภาพรวม</a>
+                        <a href="add-expense.html" class="hover:bg-forest-green-hover px-3 py-2 rounded-md font-medium text-gray-200 transition-colors"><i class="fa-solid fa-plus-circle mr-1.5"></i>บันทึกค่าใช้จ่าย</a>
+                        <a href="expense-list.html" class="hover:bg-forest-green-hover px-3 py-2 rounded-md font-medium text-gray-200 transition-colors"><i class="fa-solid fa-list-ul mr-1.5"></i>รายการทั้งหมด</a>
+                    </div>
+                </div>
+                <div class="text-sm bg-forest-green-hover px-3 py-1.5 rounded-md border border-green-700">
+                    <i class="fa-regular fa-calendar mr-2"></i>v3 Dashboard
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">แดชบอร์ดแสดงข้อมูลภาพรวม</h1>
+            <p class="text-sm text-gray-500">สรุปยอดและแนวโน้มค่าใช้จ่ายตามข้อกำหนดระบบ</p>
+        </div>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-400 uppercase">ยอดรวมวันนี้ (Today)</p>
+                    <h3 class="text-2xl font-bold mt-1 text-gray-900">฿120.00</h3>
+                    <p class="text-xs text-green-600 mt-2"><i class="fa-solid fa-arrow-down mr-1"></i> ลดลง 15% จากเมื่อวาน</p>
+                </div>
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <i class="fa-solid fa-calendar-day text-2xl"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-400 uppercase">สัปดาห์นี้ (This Week)</p>
+                    <h3 class="text-2xl font-bold mt-1 text-gray-900">฿1,450.00</h3>
+                    <p class="text-xs text-gray-400 mt-2">จันทร์ - อาทิตย์ ปัจจุบัน</p>
+                </div>
+                <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <i class="fa-solid fa-calendar-week text-2xl"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-400 uppercase">เดือนนี้ (This Month)</p>
+                    <h3 class="text-2xl font-bold mt-1 text-gray-900">฿5,840.00</h3>
+                    <p class="text-xs text-red-600 mt-2"><i class="fa-solid fa-arrow-up mr-1"></i> ใช้เกิน 80% ของงบประมาณ</p>
+                </div>
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <i class="fa-solid fa-calendar-days text-2xl"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-400 uppercase">ปีนี้ (This Year)</p>
+                    <h3 class="text-2xl font-bold mt-1 text-gray-900">฿42,100.00</h3>
+                    <p class="text-xs text-gray-400 mt-2">ภาพรวมตลาดทั้งปีนี้</p>
+                </div>
+                <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                    <i class="fa-solid fa-chart-line text-2xl"></i>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-gray-700 text-lg"><i class="fa-solid fa-chart-bar text-forest-green mr-2"></i>แนวโน้มค่าใช้จ่ายรายวัน (7 วันย้อนหลัง)</h3>
+                    <span class="text-xs text-gray-400">อัปเดตล่าสุด: วันนี้</span>
+                </div>
+                <div class="h-80">
+                    <canvas id="weeklyTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-gray-700 text-lg"><i class="fa-solid fa-chart-pie text-forest-green mr-2"></i>สัดส่วนตามหมวดหมู่เดือนนี้</h3>
+                </div>
+                <div class="h-80 flex items-center justify-center">
+                    <canvas id="categoryDonutChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-16 py-6 text-center text-xs text-gray-400">
+        &copy; 2026 Expense Tracking System. All rights reserved.
+    </footer>
+
+    <script>
+        // --- Mocking up Charts using Chart.js ---
+        const barCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'],
+                datasets: [{
+                    label: 'ยอดใช้จ่าย (บาท)',
+                    data: [250, 480, 150, 320, 600, 1200, 120],
+                    backgroundColor: '#2A5A43',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+
+        const donutCtx = document.getElementById('categoryDonutChart').getContext('2d');
+        new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['วัตถุดิบอาหาร', 'ของใช้', 'อาหารสัตว์', 'อื่นๆ'],
+                datasets: [{
+                    data: [45, 25, 20, 10],
+                    backgroundColor: ['#2A5A43', '#4D8B6C', '#83BA9B', '#CBD5E1'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+            }
+        });
+    </script>
+</body>
+</html>

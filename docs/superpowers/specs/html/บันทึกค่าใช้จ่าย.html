@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกค่าใช้จ่ายใหม่ - Expense Tracking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'forest-green': '#2A5A43',
+                        'forest-green-hover': '#1F4332',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #F8F9FA; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-forest-green text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-wallet text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-wide mr-8">Expense Tracking</span>
+                    <div class="hidden md:flex space-x-4 text-sm">
+                        <a href="dashboard.html" class="hover:bg-forest-green-hover px-3 py-2 rounded-md font-medium text-gray-200 transition-colors"><i class="fa-solid fa-chart-pie mr-1.5"></i>ภาพรวม</a>
+                        <a href="add-expense.html" class="bg-forest-green-hover px-3 py-2 rounded-md font-medium text-white"><i class="fa-solid fa-plus-circle mr-1.5"></i>บันทึกค่าใช้จ่าย</a>
+                        <a href="expense-list.html" class="hover:bg-forest-green-hover px-3 py-2 rounded-md font-medium text-gray-200 transition-colors"><i class="fa-solid fa-list-ul mr-1.5"></i>รายการทั้งหมด</a>
+                    </div>
+                </div>
+                <div class="text-sm bg-forest-green-hover px-3 py-1.5 rounded-md border border-green-700">
+                    <i class="fa-solid fa-pen-to-square mr-2"></i>v3 Entry Form
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-4 py-12">
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-100">
+                <div class="p-2.5 bg-green-50 text-forest-green rounded-lg">
+                    <i class="fa-solid fa-receipt text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 text-lg">เพิ่มรายการค่าใช้จ่ายใหม่</h3>
+                    <p class="text-xs text-gray-400">กรุณากรอกข้อมูลเพื่อจัดเก็บลงในระบบฐานข้อมูล</p>
+                </div>
+            </div>
+            
+            <form id="expenseForm" onsubmit="event.preventDefault(); alert('บันทึกข้อมูลเรียบร้อยแล้ว (Simulated)');">
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">วันที่เกิดค่าใช้จ่าย <span class="text-red-500">*</span></label>
+                    <input type="date" id="transaction_date" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-green focus:border-transparent text-sm" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-600 mb-2">คำนำหน้าใช้บ่อย (Quick Prefix)</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="applyPrefix('[วัตถุดิบ]')" class="text-xs bg-gray-50 hover:bg-green-50 hover:text-forest-green text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 transition-colors font-medium">
+                            <i class="fa-solid fa-tag text-gray-400 mr-1.5 text-[10px]"></i>[วัตถุดิบ]
+                        </button>
+                        <button type="button" onclick="applyPrefix('[ของใช้บ้าน]')" class="text-xs bg-gray-50 hover:bg-green-50 hover:text-forest-green text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 transition-colors font-medium">
+                            <i class="fa-solid fa-tag text-gray-400 mr-1.5 text-[10px]"></i>[ของใช้บ้าน]
+                        </button>
+                        <button type="button" onclick="applyPrefix('[เดลิเวอรี่]')" class="text-xs bg-gray-50 hover:bg-green-50 hover:text-forest-green text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 transition-colors font-medium">
+                            <i class="fa-solid fa-tag text-gray-400 mr-1.5 text-[10px]"></i>[เดลิเวอรี่]
+                        </button>
+                        <button type="button" onclick="applyPrefix('[ช้อปปิ้ง]')" class="text-xs bg-gray-50 hover:bg-green-50 hover:text-forest-green text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 transition-colors font-medium">
+                            <i class="fa-solid fa-tag text-gray-400 mr-1.5 text-[10px]"></i>[ช้อปปิ้ง]
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">รายละเอียดรายการ <span class="text-red-500">*</span></label>
+                    <input type="text" id="description" placeholder="พิมพ์รายละเอียดหรือคลิกคำนำหน้าด่วนด้านบน" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-green focus:border-transparent text-sm" required>
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">หมวดหมู่ <span class="text-red-500">*</span></label>
+                    <select id="category" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-green focus:border-transparent text-sm bg-white" required>
+                        <option value="" disabled selected>-- เลือกหมวดหมู่ค่าใช้จ่าย --</option>
+                        <option value="วัตถุดิบอาหาร">วัตถุดิบอาหาร</option>
+                        <option value="ครอบครัว">ครอบครัว</option>
+                        <option value="ของใช้">ของใช้</option>
+                        <option value="อาหารสัตว์">อาหารสัตว์</option>
+                        <option value="เครื่องสำอาง">เครื่องสำอาง</option>
+                    </select>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">จำนวนเงิน (บาท) <span class="text-red-500">*</span></label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-400 text-sm">฿</span>
+                        </div>
+                        <input type="number" step="0.01" min="0" id="amount" placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-green focus:border-transparent text-sm" required>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="reset" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm text-center">
+                        ล้างฟอร์ม
+                    </button>
+                    <button type="submit" class="w-2/3 bg-forest-green hover:bg-forest-green-hover text-white font-bold py-2.5 px-4 rounded-lg transition-colors text-sm shadow-sm flex items-center justify-center">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกรายการข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-16 py-6 text-center text-xs text-gray-400">
+        &copy; 2026 Expense Tracking System. All rights reserved.
+    </footer>
+
+    <script>
+        // Default Date Setting
+        document.getElementById('transaction_date').value = new Date().toISOString().split('T')[0];
+
+        function applyPrefix(prefixText) {
+            const descInput = document.getElementById('description');
+            descInput.value = prefixText + ' ';
+            descInput.focus();
+            
+            const categorySelect = document.getElementById('category');
+            if (prefixText.includes('วัตถุดิบ') || prefixText.includes('เดลิเวอรี่')) {
+                categorySelect.value = 'วัตถุดิบอาหาร';
+            } else if (prefixText.includes('ของใช้')) {
+                categorySelect.value = 'ของใช้';
+            }
+        }
+    </script>
+</body>
+</html>
