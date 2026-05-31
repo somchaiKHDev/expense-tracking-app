@@ -312,6 +312,9 @@
 			});
 	});
 
+	const totalBudgetLimit = $derived(budgetedCategories.reduce((sum, cat) => sum + Number(cat.limit), 0));
+	const totalBudgetSpent = $derived(budgetedCategories.reduce((sum, cat) => sum + Number(cat.spent), 0));
+
 	onMount(() => {
 		chartsReady = true;
 		drawBarChart();
@@ -447,14 +450,30 @@
 
 	<!-- Category Budget Dashboard Section -->
 	<section class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-		<div class="flex items-center justify-between mb-6">
-			<h3 class="font-bold text-gray-700 text-lg flex items-center gap-2 font-sarabun">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#2A5A43]" viewBox="0 0 20 20" fill="currentColor">
-					<path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-				</svg>
-				ภาพรวมการควบคุมวงเงิน (Budget Tracking)
-			</h3>
-			<span class="text-xs bg-[#EAF2ED] text-[#2A5A43] px-2.5 py-1 rounded-full font-medium font-sarabun">รอบ: {rangeLabel.subtitle}</span>
+		<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+			<div>
+				<h3 class="font-bold text-gray-700 text-lg flex items-center gap-2 font-sarabun mb-1">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#2A5A43]" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+					</svg>
+					ภาพรวมการควบคุมวงเงิน (Budget Tracking)
+				</h3>
+				<span class="text-xs bg-[#EAF2ED] text-[#2A5A43] px-2.5 py-1 rounded-full font-medium font-sarabun">รอบ: {rangeLabel.subtitle}</span>
+			</div>
+			
+			{#if budgetedCategories.length > 0}
+			<div class="flex items-center gap-4 bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100">
+				<div>
+					<div class="text-xs text-gray-500 font-sarabun mb-0.5">ใช้ไปแล้ว</div>
+					<div class="font-bold text-gray-800 text-sm leading-none">฿{formatCurrency(totalBudgetSpent)}</div>
+				</div>
+				<div class="w-px h-8 bg-gray-200"></div>
+				<div>
+					<div class="text-xs text-gray-500 font-sarabun mb-0.5">วงเงินทั้งหมด</div>
+					<div class="font-bold text-[#2A5A43] text-sm leading-none">฿{formatCurrency(totalBudgetLimit)}</div>
+				</div>
+			</div>
+			{/if}
 		</div>
 
 		{#if budgetedCategories.length === 0}
