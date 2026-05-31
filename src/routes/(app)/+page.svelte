@@ -35,12 +35,14 @@
 				store.dashboardStartDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 				break;
 			case '3months': {
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity
 				const d = new Date(now);
 				d.setMonth(d.getMonth() - 2);
 				store.dashboardStartDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 				break;
 			}
 			case '6months': {
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity
 				const d = new Date(now);
 				d.setMonth(d.getMonth() - 5);
 				store.dashboardStartDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
@@ -57,9 +59,11 @@
 		const now = new Date();
 		const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 		const yearStart = `${now.getFullYear()}-01-01`;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const d3 = new Date(now);
 		d3.setMonth(d3.getMonth() - 2);
 		const threeMonthStart = `${d3.getFullYear()}-${String(d3.getMonth() + 1).padStart(2, '0')}-01`;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const d6 = new Date(now);
 		d6.setMonth(d6.getMonth() - 5);
 		const sixMonthStart = `${d6.getFullYear()}-${String(d6.getMonth() + 1).padStart(2, '0')}-01`;
@@ -220,7 +224,9 @@
 
 		// Legend
 		ctx.font = '11px Sarabun, sans-serif';
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const lines: Array<{items: any[], width: number}> = [];
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let currentLine: any[] = [];
 		let currentLineWidth = 0;
 
@@ -485,7 +491,7 @@
 			</div>
 		{:else}
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{#each budgetedCategories as cat}
+				{#each budgetedCategories as cat (cat.id)}
 					<div class="p-5 rounded-xl border transition-all duration-200 hover:shadow-md font-sarabun {cat.cardBg} {cat.borderColor}">
 						<div class="flex justify-between items-start mb-2">
 							<div>
