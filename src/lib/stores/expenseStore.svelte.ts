@@ -16,19 +16,8 @@ export interface Expense {
 	created_at: string; // ISO string
 }
 
-
 export type SortField = 'transaction_date' | 'description' | 'category' | 'amount';
 export type SortDirection = 'asc' | 'desc';
-
-// Seed defaults
-const DEFAULT_CATEGORIES: Category[] = [
-	{ id: 1, name: 'วัตถุดิบอาหาร' },
-	{ id: 2, name: 'ครอบครัว' },
-	{ id: 3, name: 'ของใช้' },
-	{ id: 4, name: 'อาหารสัตว์' },
-	{ id: 5, name: 'เครื่องสำอาง' }
-];
-
 
 // ─── Date helpers ────────────────────────────────────────
 function getLocalISODate(d: Date = new Date()): string {
@@ -45,6 +34,7 @@ function today(): string {
 function getMonday(d: Date): Date {
 	const day = d.getDay();
 	const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	const monday = new Date(d);
 	monday.setDate(diff);
 	monday.setHours(0, 0, 0, 0);
@@ -53,6 +43,7 @@ function getMonday(d: Date): Date {
 
 function getSunday(d: Date): Date {
 	const monday = getMonday(d);
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	const sunday = new Date(monday);
 	sunday.setDate(monday.getDate() + 6);
 	sunday.setHours(23, 59, 59, 999);
@@ -64,7 +55,6 @@ class ExpenseStore {
 	// Core state
 	expenses = $state<Expense[]>([]);
 	categories = $state<Category[]>([]);
-
 
 	// Cache flag — categories are loaded once after login and only
 	// refreshed explicitly after add/update category operations.
@@ -100,7 +90,9 @@ class ExpenseStore {
 	dailyAverage = $state(0);
 
 	weeklyTrend = $state<{ label: string; amount: number }[]>([]);
-	monthlyCategoryBreakdown = $state<{ category_id: number; name: string; amount: number; color: string }[]>([]);
+	monthlyCategoryBreakdown = $state<
+		{ category_id: number; name: string; amount: number; color: string }[]
+	>([]);
 
 	// UI state
 	editingExpense = $state<Expense | null>(null);
@@ -123,10 +115,7 @@ class ExpenseStore {
 	async loadMetadata() {
 		this.loading = true;
 		try {
-			await Promise.all([
-				this.fetchCategories(),
-				this.fetchStats()
-			]);
+			await Promise.all([this.fetchCategories(), this.fetchStats()]);
 		} catch (err) {
 			console.error('Failed to load store data:', err);
 		} finally {
@@ -137,6 +126,7 @@ class ExpenseStore {
 	// Fetch expenses based on filters/pagination/sorting
 	async fetchExpenses() {
 		try {
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const params = new URLSearchParams();
 			params.set('page', String(this.currentPage));
 			params.set('pageSize', String(this.pageSize));
@@ -153,7 +143,12 @@ class ExpenseStore {
 
 			const res = await api.get<{
 				data: Expense[];
-				pagination: { totalItems: number; totalPages: number; currentPage: number; pageSize: number };
+				pagination: {
+					totalItems: number;
+					totalPages: number;
+					currentPage: number;
+					pageSize: number;
+				};
 				totalAmount: number;
 			}>(`/api/expenses?${params.toString()}`);
 
@@ -181,22 +176,37 @@ class ExpenseStore {
 		}
 	}
 
-
 	// Fetch dashboard and trend stats for the selected date range
 	async fetchStats() {
 		try {
 			const now = new Date();
 			const endDate = getLocalISODate(now);
-			const startDate = this.dashboardStartDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+			const startDate =
+				this.dashboardStartDate ||
+				`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
 			const res = await api.get<{
 				totalSpent: number;
-				categoryDistribution: { category_id: number; name: string; amount: number; percentage: number }[];
+				categoryDistribution: {
+					category_id: number;
+					name: string;
+					amount: number;
+					percentage: number;
+				}[];
 				dailyTrend: { date: string; amount: number }[];
 			}>(`/api/dashboard/stats?startDate=${startDate}&endDate=${endDate}`);
 
 			// Map monthlyCategoryBreakdown colors
-			const colors = ['#2A5A43', '#4D8B6C', '#83BA9B', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6', '#14B8A6'];
+			const colors = [
+				'#2A5A43',
+				'#4D8B6C',
+				'#83BA9B',
+				'#F59E0B',
+				'#6366F1',
+				'#EC4899',
+				'#8B5CF6',
+				'#14B8A6'
+			];
 			this.monthlyCategoryBreakdown = res.categoryDistribution.map((item, i) => ({
 				category_id: item.category_id,
 				name: item.name,
@@ -208,10 +218,11 @@ class ExpenseStore {
 			const dayLabels = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 			const trend: { label: string; amount: number }[] = [];
 			for (let i = 6; i >= 0; i--) {
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity
 				const d = new Date(now);
 				d.setDate(d.getDate() - i);
 				const dateStr = getLocalISODate(d);
-				const match = res.dailyTrend.find(t => t.date === dateStr);
+				const match = res.dailyTrend.find((t) => t.date === dateStr);
 				trend.push({
 					label: dayLabels[d.getDay()],
 					amount: match ? match.amount : 0
@@ -224,20 +235,22 @@ class ExpenseStore {
 
 			// Today total
 			const t = today();
-			const todayMatch = res.dailyTrend.find(item => item.date === t);
+			const todayMatch = res.dailyTrend.find((item) => item.date === t);
 			this.todayTotal = todayMatch ? todayMatch.amount : 0;
 
 			// Yesterday total
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const yesterday = new Date();
 			yesterday.setDate(yesterday.getDate() - 1);
 			const yStr = getLocalISODate(yesterday);
-			const yesterdayMatch = res.dailyTrend.find(item => item.date === yStr);
+			const yesterdayMatch = res.dailyTrend.find((item) => item.date === yStr);
 			this.yesterdayTotal = yesterdayMatch ? yesterdayMatch.amount : 0;
 
 			if (this.yesterdayTotal === 0) {
 				this.todayChangePercent = 0;
 			} else {
-				this.todayChangePercent = ((this.todayTotal - this.yesterdayTotal) / this.yesterdayTotal) * 100;
+				this.todayChangePercent =
+					((this.todayTotal - this.yesterdayTotal) / this.yesterdayTotal) * 100;
 			}
 
 			// Compute weekTotal from dailyTrend (current week Mon-Sun)
@@ -246,13 +259,16 @@ class ExpenseStore {
 			const mondayStr = getLocalISODate(monday);
 			const sundayStr = getLocalISODate(sunday);
 			this.weekTotal = res.dailyTrend
-				.filter(d => d.date >= mondayStr && d.date <= sundayStr)
+				.filter((d) => d.date >= mondayStr && d.date <= sundayStr)
 				.reduce((sum, d) => sum + d.amount, 0);
 
 			// Compute daily average for the selected range
 			const rangeStart = new Date(startDate + 'T00:00:00');
 			const rangeEnd = new Date(endDate + 'T00:00:00');
-			const daysDiff = Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+			const daysDiff = Math.max(
+				1,
+				Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+			);
 			this.dailyAverage = res.totalSpent / daysDiff;
 		} catch (err) {
 			console.error('Failed to fetch stats:', err);
@@ -299,7 +315,6 @@ class ExpenseStore {
 		}
 	}
 
-
 	// ─── Category operations ───
 	async addCategory(name: string, monthlyLimit?: number | null) {
 		try {
@@ -329,7 +344,6 @@ class ExpenseStore {
 	getCategoryName(id: number): string {
 		return this.categories.find((c) => c.id === id)?.name ?? 'ไม่ระบุ';
 	}
-
 
 	// compatibility getters with old code
 	get filteredExpenses(): Expense[] {
@@ -377,6 +391,7 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(dateStr: string): string {
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	const d = new Date(dateStr + 'T00:00:00');
 	return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
