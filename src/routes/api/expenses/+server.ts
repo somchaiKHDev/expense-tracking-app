@@ -52,9 +52,15 @@ export const GET: RequestHandler = async (event) => {
 			}
 		}
 
-		// Query count and data concurrently
-		const [totalItems, dbExpenses] = await Promise.all([
+		// Query count, sum, and data concurrently
+		const [totalItems, aggregateResult, dbExpenses] = await Promise.all([
 			prisma.expense.count({ where: whereClause }),
+			prisma.expense.aggregate({
+				where: whereClause,
+				_sum: {
+					amount: true
+				}
+			}),
 			prisma.expense.findMany({
 				where: whereClause,
 				skip: (page - 1) * pageSize,
@@ -66,6 +72,7 @@ export const GET: RequestHandler = async (event) => {
 		]);
 
 		const totalPages = Math.ceil(totalItems / pageSize);
+		const totalAmount = Number(aggregateResult._sum.amount || 0);
 
 		// Map to API structure
 		const mapped = dbExpenses.map(e => ({
@@ -84,7 +91,8 @@ export const GET: RequestHandler = async (event) => {
 				totalPages,
 				currentPage: page,
 				pageSize
-			}
+			},
+			totalAmount
 		});
 	} catch (err: any) {
 		return json({ error: err.message || 'Internal Server Error' }, { status: err.status || 500 });

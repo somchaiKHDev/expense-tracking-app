@@ -53,6 +53,7 @@
 	}
 
 	function handleSort(field: SortField) {
+		if (store.totalFilteredExpenses === 0) return;
 		store.toggleSort(field);
 	}
 
@@ -82,6 +83,14 @@
 	const now = new Date();
 	const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 	let selectedMonth = $state(defaultMonth);
+
+	function getSelectedMonthName(monthVal: string): string {
+		if (!monthVal) return '';
+		const [year, month] = monthVal.split('-').map(Number);
+		const d = new Date(year, month - 1, 1);
+		return d.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+	}
+	let selectedMonthName = $derived(getSelectedMonthName(selectedMonth));
 
 	// Compute start/end dates from a YYYY-MM string
 	function monthToDateRange(monthValue: string): { start: string; end: string } {
@@ -226,16 +235,16 @@
 			<table class="w-full table-auto text-left border-collapse">
 				<thead>
 					<tr class="text-white text-sm font-semibold tracking-wider" style="background-color: #2A5A43;">
-						<th class="px-6 py-4 border-b border-green-800 w-40 cursor-pointer select-none" onclick={() => handleSort('transaction_date')}>
+						<th class="px-6 py-4 border-b border-green-800 w-40 select-none" class:cursor-pointer={store.totalFilteredExpenses > 0} onclick={() => handleSort('transaction_date')}>
 							วันที่ <span class="ml-1 opacity-70">{getSortIcon('transaction_date')}</span>
 						</th>
-						<th class="px-6 py-4 border-b border-green-800 cursor-pointer select-none" onclick={() => handleSort('description')}>
+						<th class="px-6 py-4 border-b border-green-800 select-none" class:cursor-pointer={store.totalFilteredExpenses > 0} onclick={() => handleSort('description')}>
 							รายการ (Description) <span class="ml-1 opacity-70">{getSortIcon('description')}</span>
 						</th>
-						<th class="px-6 py-4 border-b border-green-800 w-48 cursor-pointer select-none" onclick={() => handleSort('category')}>
+						<th class="px-6 py-4 border-b border-green-800 w-48 select-none" class:cursor-pointer={store.totalFilteredExpenses > 0} onclick={() => handleSort('category')}>
 							ประเภท (Category) <span class="ml-1 opacity-70">{getSortIcon('category')}</span>
 						</th>
-						<th class="px-6 py-4 border-b border-green-800 text-right w-44 cursor-pointer select-none" onclick={() => handleSort('amount')}>
+						<th class="px-6 py-4 border-b border-green-800 text-right w-44 select-none" class:cursor-pointer={store.totalFilteredExpenses > 0} onclick={() => handleSort('amount')}>
 							ค่าใช้จ่าย (Amount) <span class="ml-1 opacity-70">{getSortIcon('amount')}</span>
 						</th>
 						<th class="px-6 py-4 border-b border-green-800 text-center w-28">จัดการ</th>
@@ -290,6 +299,15 @@
 							</td>
 							<td class="px-6 py-4 text-right text-lg" style="color: #2A5A43;">
 								฿{formatCurrency(store.pageTotal)}
+							</td>
+							<td></td>
+						</tr>
+						<tr class="bg-[#F4FAF7] font-bold text-gray-800 text-sm border-t border-emerald-100">
+							<td colspan="3" class="px-6 py-4 text-left font-semibold text-[#1E3F30]">
+								รวมค่าใช้จ่ายทั้งหมดประจำเดือน {selectedMonthName} (Month Total)
+							</td>
+							<td class="px-6 py-4 text-right text-lg text-[#2A5A43]">
+								฿{formatCurrency(store.filteredTotalAmount)}
 							</td>
 							<td></td>
 						</tr>

@@ -13,13 +13,15 @@
 		onpagechange: (page: number) => void;
 	} = $props();
 
-	let startItem = $derived((currentPage - 1) * pageSize + 1);
+	let startItem = $derived(totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1);
 	let endItem = $derived(Math.min(currentPage * pageSize, totalItems));
 
 	// Generate page numbers to display
 	let displayPages = $derived.by(() => {
 		const pages: number[] = [];
 		const maxVisible = 5;
+
+		if (totalPages <= 1) return [];
 
 		if (totalPages <= maxVisible) {
 			for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -43,11 +45,11 @@
 	<div class="inline-flex items-center space-x-1">
 		<button
 			class="px-3 py-1.5 bg-white border border-gray-300 rounded text-sm transition-colors"
-			class:text-gray-400={currentPage === 1}
-			class:cursor-not-allowed={currentPage === 1}
-			class:text-gray-600={currentPage > 1}
-			class:hover:bg-gray-50={currentPage > 1}
-			disabled={currentPage === 1}
+			class:text-gray-400={currentPage <= 1 || totalPages <= 1}
+			class:cursor-not-allowed={currentPage <= 1 || totalPages <= 1}
+			class:text-gray-600={currentPage > 1 && totalPages > 1}
+			class:hover:bg-gray-50={currentPage > 1 && totalPages > 1}
+			disabled={currentPage <= 1 || totalPages <= 1}
 			onclick={() => onpagechange(currentPage - 1)}
 		>
 			ก่อนหน้า
@@ -75,11 +77,11 @@
 
 		<button
 			class="px-3 py-1.5 bg-white border border-gray-300 rounded text-sm transition-colors"
-			class:text-gray-400={currentPage === totalPages}
-			class:cursor-not-allowed={currentPage === totalPages}
-			class:text-gray-600={currentPage < totalPages}
-			class:hover:bg-gray-50={currentPage < totalPages}
-			disabled={currentPage === totalPages}
+			class:text-gray-400={currentPage >= totalPages || totalPages <= 1}
+			class:cursor-not-allowed={currentPage >= totalPages || totalPages <= 1}
+			class:text-gray-600={currentPage < totalPages && totalPages > 1}
+			class:hover:bg-gray-50={currentPage < totalPages && totalPages > 1}
+			disabled={currentPage >= totalPages || totalPages <= 1}
 			onclick={() => onpagechange(currentPage + 1)}
 		>
 			ถัดไป

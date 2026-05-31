@@ -96,6 +96,7 @@ class ExpenseStore {
 	pageSize = $state(10);
 	totalFilteredExpenses = $state(0);
 	totalPages = $state(1);
+	filteredTotalAmount = $state(0);
 
 	// Summary statistics (API sourced or computed)
 	todayTotal = $state(0);
@@ -157,11 +158,13 @@ class ExpenseStore {
 			const res = await api.get<{
 				data: Expense[];
 				pagination: { totalItems: number; totalPages: number; currentPage: number; pageSize: number };
+				totalAmount: number;
 			}>(`/api/expenses?${params.toString()}`);
 
 			this.expenses = res.data;
 			this.totalFilteredExpenses = res.pagination.totalItems;
 			this.totalPages = res.pagination.totalPages;
+			this.filteredTotalAmount = res.totalAmount;
 		} catch (err) {
 			console.error('Failed to fetch expenses:', err);
 		}
