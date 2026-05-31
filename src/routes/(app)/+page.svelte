@@ -332,7 +332,9 @@
 	$effect(() => {
 		if (!chartsReady) return;
 		// Touch reactive deps
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		store.weeklyTrend;
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		store.monthlyCategoryBreakdown;
 		// Schedule redraw
 		requestAnimationFrame(() => {

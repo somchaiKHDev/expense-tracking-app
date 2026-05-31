@@ -16,11 +16,6 @@ export interface Expense {
 	created_at: string; // ISO string
 }
 
-export interface ItemPrefix {
-	id: number;
-	prefix_text: string;
-	usage_count: number;
-}
 
 export type SortField = 'transaction_date' | 'description' | 'category' | 'amount';
 export type SortDirection = 'asc' | 'desc';
@@ -34,12 +29,6 @@ const DEFAULT_CATEGORIES: Category[] = [
 	{ id: 5, name: 'เครื่องสำอาง' }
 ];
 
-const DEFAULT_PREFIXES: ItemPrefix[] = [
-	{ id: 1, prefix_text: '[วัตถุดิบ]', usage_count: 12 },
-	{ id: 2, prefix_text: '[ของใช้บ้าน]', usage_count: 8 },
-	{ id: 3, prefix_text: '[เดลิเวอรี่]', usage_count: 5 },
-	{ id: 4, prefix_text: '[ช้อปปิ้ง]', usage_count: 3 }
-];
 
 // ─── Date helpers ────────────────────────────────────────
 function getLocalISODate(d: Date = new Date()): string {
@@ -75,7 +64,7 @@ class ExpenseStore {
 	// Core state
 	expenses = $state<Expense[]>([]);
 	categories = $state<Category[]>([]);
-	prefixes = $state<ItemPrefix[]>([]);
+
 
 	// Cache flag — categories are loaded once after login and only
 	// refreshed explicitly after add/update category operations.
@@ -136,7 +125,6 @@ class ExpenseStore {
 		try {
 			await Promise.all([
 				this.fetchCategories(),
-				this.fetchPrefixes(),
 				this.fetchStats()
 			]);
 		} catch (err) {
@@ -193,14 +181,6 @@ class ExpenseStore {
 		}
 	}
 
-	// Fetch item prefixes
-	async fetchPrefixes() {
-		try {
-			this.prefixes = await api.get<ItemPrefix[]>('/api/prefixes');
-		} catch (err) {
-			console.error('Failed to fetch prefixes:', err);
-		}
-	}
 
 	// Fetch dashboard and trend stats for the selected date range
 	async fetchStats() {
@@ -290,7 +270,6 @@ class ExpenseStore {
 			});
 			await this.fetchExpenses();
 			await this.fetchStats();
-			await this.fetchPrefixes(); // Count increments
 			return newExpense;
 		} catch (err) {
 			console.error('Failed to add expense:', err);
@@ -320,24 +299,6 @@ class ExpenseStore {
 		}
 	}
 
-	// ─── Prefix operations ──
-	async addPrefix(text: string) {
-		try {
-			await api.post('/api/prefixes', { prefix_text: text });
-			await this.fetchPrefixes();
-		} catch (err) {
-			console.error('Failed to add prefix:', err);
-		}
-	}
-
-	async deletePrefix(id: number) {
-		try {
-			await api.delete(`/api/prefixes/${id}`);
-			await this.fetchPrefixes();
-		} catch (err) {
-			console.error('Failed to delete prefix:', err);
-		}
-	}
 
 	// ─── Category operations ───
 	async addCategory(name: string, monthlyLimit?: number | null) {
@@ -369,18 +330,6 @@ class ExpenseStore {
 		return this.categories.find((c) => c.id === id)?.name ?? 'ไม่ระบุ';
 	}
 
-	// Compatibility method - backend increments it automatically on POST /api/expenses if prefix matches,
-	// but UI calls it immediately to show immediate feedback.
-	incrementPrefixUsage(id: number) {
-		this.prefixes = this.prefixes.map((p) =>
-			p.id === id ? { ...p, usage_count: p.usage_count + 1 } : p
-		);
-	}
-
-	// ─── Sorted prefixes (by usage desc) ─────
-	get sortedPrefixes(): ItemPrefix[] {
-		return [...this.prefixes].sort((a, b) => b.usage_count - a.usage_count);
-	}
 
 	// compatibility getters with old code
 	get filteredExpenses(): Expense[] {

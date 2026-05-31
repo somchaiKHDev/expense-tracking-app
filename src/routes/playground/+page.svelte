@@ -16,8 +16,8 @@
 		ThemeTokens,
 		Toggle
 	} from '$lib/components/ui';
-	import { SummaryCard, CategoryBadge, PrefixChips, PaginationBar } from '$lib/components/expense';
-	import { formatCurrency, type ItemPrefix } from '$lib/stores/expenseStore.svelte';
+	import { SummaryCard, CategoryBadge, PaginationBar } from '$lib/components/expense';
+	import { formatCurrency } from '$lib/stores/expenseStore.svelte';
 
 	let modalOpen = $state(false);
 	let toggleChecked = $state(false);
@@ -31,14 +31,7 @@
 	}
 
 	// --- Expense component demos ---
-	let demoPrefixes: ItemPrefix[] = [
-		{ id: 1, prefix_text: '[วัตถุดิบ]', usage_count: 12 },
-		{ id: 2, prefix_text: '[ของใช้บ้าน]', usage_count: 8 },
-		{ id: 3, prefix_text: '[เดลิเวอรี่]', usage_count: 5 },
-		{ id: 4, prefix_text: '[ช้อปปิ้ง]', usage_count: 3 }
-	];
 
-	let selectedPrefix = $state('');
 	let demoPaginationPage = $state(1);
 </script>
 
@@ -158,28 +151,6 @@
 		</div>
 	</section>
 
-	<section>
-		<h2 class="text-2xl font-bold mb-4">PrefixChips</h2>
-		<div class="max-w-lg bg-white p-4 rounded-xl border border-gray-100">
-			<PrefixChips prefixes={demoPrefixes} onselect={(p) => (selectedPrefix = p.prefix_text)} />
-			{#if selectedPrefix}
-				<p class="text-sm text-gray-600 mt-2">เลือก: <code class="bg-base-200 px-2 py-0.5 rounded">{selectedPrefix}</code></p>
-			{/if}
-		</div>
-
-		<div class="rounded-xl bg-base-200 p-4 space-y-3 text-sm mt-4">
-			<p class="font-semibold">วิธีใช้งาน</p>
-			<div class="space-y-1">
-				<p class="text-base-content/60">props: prefixes (ItemPrefix[]), onselect ((prefix) =&gt; void)</p>
-				<pre class="overflow-x-auto rounded-lg bg-base-300 p-3 text-xs"><code
-					>&lt;PrefixChips
-  prefixes=&#123;store.sortedPrefixes&#125;
-  onselect=&#123;handlePrefixSelect&#125;
-/&gt;</code
-				></pre>
-			</div>
-		</div>
-	</section>
 
 	<section>
 		<h2 class="text-2xl font-bold mb-4">PaginationBar</h2>

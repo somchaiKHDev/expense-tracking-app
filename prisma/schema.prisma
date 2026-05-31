@@ -22,7 +22,6 @@ model User {
   sessions      Session[]
   expenses      Expense[]
   categories    Category[]
-  itemPrefixes  ItemPrefix[]
 
   @@map("users")
 }
@@ -96,16 +95,4 @@ model Expense {
   @@index([userId, transactionDate(sort: Desc)], name: "idx_expenses_user_date")
   @@index([categoryId], name: "idx_expenses_category")
   @@map("expenses")
-}
-
-model ItemPrefix {
-  id         Int      @id @default(autoincrement())
-  prefixText String   @map("prefix_text")
-  usageCount Int      @default(0) @map("usage_count")
-  userId     String   @map("user_id")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@unique([userId, prefixText], name: "uq_user_prefix")
-  @@map("item_prefixes")
 }

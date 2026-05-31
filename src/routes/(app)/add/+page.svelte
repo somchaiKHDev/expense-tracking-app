@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { PrefixChips } from '$lib/components/expense';
-	import { useExpenseStore, type ItemPrefix } from '$lib/stores/expenseStore.svelte';
+	import { useExpenseStore } from '$lib/stores/expenseStore.svelte';
 
 	function getLocalISODate() {
 		const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -78,25 +77,7 @@
 		}
 	}
 
-	function handlePrefixSelect(prefix: ItemPrefix) {
-		description = prefix.prefix_text + ' ';
-		store.incrementPrefixUsage(prefix.id);
 
-		// Auto-select category based on prefix
-		if (prefix.prefix_text.includes('วัตถุดิบ') || prefix.prefix_text.includes('เดลิเวอรี่')) {
-			categoryId = 1; // วัตถุดิบอาหาร
-		} else if (prefix.prefix_text.includes('ของใช้')) {
-			categoryId = 3; // ของใช้
-		} else if (prefix.prefix_text.includes('ช้อปปิ้ง')) {
-			categoryId = 5; // เครื่องสำอาง
-		}
-
-		// Focus the input and move cursor to end
-		setTimeout(() => {
-			descriptionInput?.focus();
-			descriptionInput?.setSelectionRange(description.length, description.length);
-		}, 0);
-	}
 
 	function handleSubmit() {
 		errorMessage = '';
@@ -199,9 +180,6 @@
 				/>
 			</div>
 
-			<!-- Prefix Chips -->
-			<PrefixChips prefixes={store.sortedPrefixes} onselect={handlePrefixSelect} />
-
 			<!-- Description -->
 			<div class="mb-5">
 				<label for="description" class="block text-sm font-semibold text-gray-600 mb-1.5">
@@ -212,7 +190,7 @@
 					id="description"
 					bind:this={descriptionInput}
 					bind:value={description}
-					placeholder="พิมพ์รายละเอียดหรือคลิกคำนำหน้าด่วนด้านบน"
+					placeholder="พิมพ์รายละเอียด"
 					class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2A5A43] focus:border-transparent text-sm"
 					required
 				/>

@@ -108,45 +108,15 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'Missing required expense fields' }, { status: 400 });
 		}
 
-		// Perform database transaction for expense and potential prefix update
-		const result = await prisma.$transaction(async (tx) => {
-			const expense = await tx.expense.create({
-				data: {
-					description,
-					amount: parseFloat(amount),
-					// Use T12:00:00Z (noon UTC) to avoid day-shift issues with @db.Date + timezone
-					transactionDate: new Date(`${transaction_date}T12:00:00.000Z`),
-					userId: payload.userId,
-					categoryId: category_id ? parseInt(category_id, 10) : null
-				}
-			});
-
-			// Extract matching prefix like [Prefix] and increment its usage count if found
-			const prefixRegex = /^(\[[^\]]+\])/;
-			const match = description.match(prefixRegex);
-			if (match) {
-				const foundPrefixText = match[1];
-
-				// Find and upsert prefix to increment usage count
-				await tx.itemPrefix.upsert({
-					where: {
-						uq_user_prefix: {
-							userId: payload.userId,
-							prefixText: foundPrefixText
-						}
-					},
-					update: {
-						usageCount: { increment: 1 }
-					},
-					create: {
-						prefixText: foundPrefixText,
-						usageCount: 1,
-						userId: payload.userId
-					}
-				});
+		const result = await prisma.expense.create({
+			data: {
+				description,
+				amount: parseFloat(amount),
+				// Use T12:00:00Z (noon UTC) to avoid day-shift issues with @db.Date + timezone
+				transactionDate: new Date(`${transaction_date}T12:00:00.000Z`),
+				userId: payload.userId,
+				categoryId: category_id ? parseInt(category_id, 10) : null
 			}
-
-			return expense;
 		});
 
 		return json(

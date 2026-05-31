@@ -1,4 +1,4 @@
-import type { Category, Expense, ItemPrefix } from '../stores/expenseStore.svelte';
+import type { Category, Expense } from '../stores/expenseStore.svelte';
 
 export interface User {
 	id: number;
@@ -27,12 +27,7 @@ export let categories: (Category & { user_id: number; created_at: string })[] = 
 	{ id: 5, name: 'เครื่องสำอาง', user_id: 1, created_at: new Date().toISOString() }
 ];
 
-export let prefixes: (ItemPrefix & { user_id: number; created_at: string })[] = [
-	{ id: 1, prefix_text: '[วัตถุดิบ]', usage_count: 12, user_id: 1, created_at: new Date().toISOString() },
-	{ id: 2, prefix_text: '[ของใช้บ้าน]', usage_count: 8, user_id: 1, created_at: new Date().toISOString() },
-	{ id: 3, prefix_text: '[เดลิเวอรี่]', usage_count: 5, user_id: 1, created_at: new Date().toISOString() },
-	{ id: 4, prefix_text: '[ช้อปปิ้ง]', usage_count: 3, user_id: 1, created_at: new Date().toISOString() }
-];
+
 
 const now = new Date();
 const d = (daysAgo: number) => {
