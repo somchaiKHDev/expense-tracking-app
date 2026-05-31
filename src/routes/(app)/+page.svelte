@@ -18,6 +18,69 @@
 		return { text: `เพิ่มขึ้น ${pct.toFixed(0)}% จากเมื่อวาน`, type: 'up' as const };
 	});
 
+	// Date filter
+	const todayDate = (() => {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	})();
+
+	async function handleStartDateChange() {
+		await store.fetchStats();
+	}
+
+	function setPreset(preset: string) {
+		const now = new Date();
+		switch (preset) {
+			case 'month':
+				store.dashboardStartDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+				break;
+			case '3months': {
+				const d = new Date(now);
+				d.setMonth(d.getMonth() - 2);
+				store.dashboardStartDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+				break;
+			}
+			case '6months': {
+				const d = new Date(now);
+				d.setMonth(d.getMonth() - 5);
+				store.dashboardStartDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+				break;
+			}
+			case 'year':
+				store.dashboardStartDate = `${now.getFullYear()}-01-01`;
+				break;
+		}
+		store.fetchStats();
+	}
+
+	let activePreset = $derived.by(() => {
+		const now = new Date();
+		const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+		const yearStart = `${now.getFullYear()}-01-01`;
+		const d3 = new Date(now);
+		d3.setMonth(d3.getMonth() - 2);
+		const threeMonthStart = `${d3.getFullYear()}-${String(d3.getMonth() + 1).padStart(2, '0')}-01`;
+		const d6 = new Date(now);
+		d6.setMonth(d6.getMonth() - 5);
+		const sixMonthStart = `${d6.getFullYear()}-${String(d6.getMonth() + 1).padStart(2, '0')}-01`;
+		if (store.dashboardStartDate === monthStart) return 'month';
+		if (store.dashboardStartDate === threeMonthStart) return '3months';
+		if (store.dashboardStartDate === sixMonthStart) return '6months';
+		if (store.dashboardStartDate === yearStart) return 'year';
+		return 'custom';
+	});
+
+	let rangeLabel = $derived.by(() => {
+		const now = new Date();
+		const defaultStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+		if (store.dashboardStartDate === defaultStart) {
+			return { title: 'เดือนนี้ (This Month)', subtitle: 'ยอดรวมเดือนนี้' };
+		}
+		const startDate = new Date(store.dashboardStartDate + 'T00:00:00');
+		const startFormatted = startDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+		return { title: 'ช่วงที่เลือก', subtitle: `ตั้งแต่ ${startFormatted} ถึง วันนี้` };
+	});
+
 	function drawBarChart() {
 		const ctx = barCanvas.getContext('2d');
 		if (!ctx) return;
@@ -109,7 +172,7 @@
 			ctx.fillStyle = '#9CA3AF';
 			ctx.font = '14px Sarabun, sans-serif';
 			ctx.textAlign = 'center';
-			ctx.fillText('ไม่มีข้อมูลเดือนนี้', rect.width / 2, rect.height / 2);
+			ctx.fillText('ไม่มีข้อมูลช่วงที่เลือก', rect.width / 2, rect.height / 2);
 			return;
 		}
 
@@ -153,7 +216,7 @@
 		ctx.fillText(`฿${formatCurrency(total)}`, centerX, centerY - 4);
 		ctx.fillStyle = '#9CA3AF';
 		ctx.font = '11px Sarabun, sans-serif';
-		ctx.fillText('ยอดรวมเดือนนี้', centerX, centerY + 14);
+		ctx.fillText('ยอดรวมช่วงที่เลือก', centerX, centerY + 14);
 
 		// Legend
 		ctx.font = '11px Sarabun, sans-serif';
@@ -284,8 +347,35 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 	<!-- Header -->
 	<div class="mb-6">
-		<h1 class="text-2xl font-bold text-gray-800">แดชบอร์ดแสดงข้อมูลภาพรวม</h1>
-		<p class="text-sm text-gray-500">สรุปยอดและแนวโน้มค่าใช้จ่ายตามข้อกำหนดระบบ</p>
+		<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+			<div>
+				<h1 class="text-2xl font-bold text-gray-800">แดชบอร์ดแสดงข้อมูลภาพรวม</h1>
+				<p class="text-sm text-gray-500">สรุปยอดและแนวโน้มค่าใช้จ่ายตามข้อกำหนดระบบ</p>
+			</div>
+			<div class="flex flex-col items-end gap-2">
+				<div class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-100">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#2A5A43] shrink-0" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+					</svg>
+					<label for="dashboardStartDate" class="text-sm text-gray-600 font-medium whitespace-nowrap">ตั้งแต่</label>
+					<input
+						type="date"
+						id="dashboardStartDate"
+						bind:value={store.dashboardStartDate}
+						max={todayDate}
+						onchange={handleStartDateChange}
+						class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#2A5A43]/30 focus:border-[#2A5A43] transition-colors"
+					/>
+					<span class="text-sm text-gray-400 whitespace-nowrap">ถึง วันนี้</span>
+				</div>
+				<div class="flex items-center gap-1.5">
+					<button onclick={() => setPreset('month')} class="text-xs px-3 py-1 rounded-full transition-colors {activePreset === 'month' ? 'bg-[#2A5A43] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">เดือนนี้</button>
+					<button onclick={() => setPreset('3months')} class="text-xs px-3 py-1 rounded-full transition-colors {activePreset === '3months' ? 'bg-[#2A5A43] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">3 เดือน</button>
+					<button onclick={() => setPreset('6months')} class="text-xs px-3 py-1 rounded-full transition-colors {activePreset === '6months' ? 'bg-[#2A5A43] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">6 เดือน</button>
+					<button onclick={() => setPreset('year')} class="text-xs px-3 py-1 rounded-full transition-colors {activePreset === 'year' ? 'bg-[#2A5A43] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">ปีนี้</button>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<!-- Summary Cards -->
@@ -308,20 +398,20 @@
 			subtitle="จันทร์ - อาทิตย์ ปัจจุบัน"
 		/>
 		<SummaryCard
-			title="เดือนนี้ (This Month)"
+			title={rangeLabel.title}
 			value="฿{formatCurrency(store.monthTotal)}"
 			icon="month"
 			iconBg="bg-emerald-50"
 			iconColor="text-emerald-600"
-			subtitle="ยอดรวมเดือนนี้"
+			subtitle={rangeLabel.subtitle}
 		/>
 		<SummaryCard
-			title="ปีนี้ (This Year)"
-			value="฿{formatCurrency(store.yearTotal)}"
+			title="เฉลี่ย/วัน (Daily Avg)"
+			value="฿{formatCurrency(store.dailyAverage)}"
 			icon="year"
 			iconBg="bg-purple-50"
 			iconColor="text-purple-600"
-			subtitle="ภาพรวมทั้งปี {new Date().getFullYear()}"
+			subtitle="ค่าเฉลี่ยต่อวันในช่วงที่เลือก"
 		/>
 	</section>
 
@@ -346,7 +436,7 @@
 			<div class="flex items-center justify-between mb-4">
 				<h3 class="font-bold text-gray-700 text-lg flex items-center gap-2">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#2A5A43]" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
-					สัดส่วนตามหมวดหมู่เดือนนี้
+					สัดส่วนตามหมวดหมู่
 				</h3>
 			</div>
 			<div class="h-80 flex items-center justify-center">
@@ -364,7 +454,7 @@
 				</svg>
 				ภาพรวมการควบคุมวงเงิน (Budget Tracking)
 			</h3>
-			<span class="text-xs bg-[#EAF2ED] text-[#2A5A43] px-2.5 py-1 rounded-full font-medium font-sarabun">รอบปัจจุบัน: เดือนนี้</span>
+			<span class="text-xs bg-[#EAF2ED] text-[#2A5A43] px-2.5 py-1 rounded-full font-medium font-sarabun">รอบ: {rangeLabel.subtitle}</span>
 		</div>
 
 		{#if budgetedCategories.length === 0}

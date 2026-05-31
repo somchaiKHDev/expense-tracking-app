@@ -6,15 +6,19 @@ import { authenticate } from '$lib/server/auth';
 export const GET: RequestHandler = async (event) => {
 	try {
 		const payload = await authenticate(event);
-		const monthParam = event.url.searchParams.get('month'); // Expecting format "YYYY-MM"
+		const startDateParam = event.url.searchParams.get('startDate'); // YYYY-MM-DD
+		const endDateParam = event.url.searchParams.get('endDate'); // YYYY-MM-DD
 
-		if (!monthParam || !/^\d{4}-\d{2}$/.test(monthParam)) {
-			return json({ error: 'Valid month parameter (YYYY-MM) is required' }, { status: 400 });
+		if (!startDateParam || !/^\d{4}-\d{2}-\d{2}$/.test(startDateParam)) {
+			return json({ error: 'Valid startDate parameter (YYYY-MM-DD) is required' }, { status: 400 });
+		}
+		if (!endDateParam || !/^\d{4}-\d{2}-\d{2}$/.test(endDateParam)) {
+			return json({ error: 'Valid endDate parameter (YYYY-MM-DD) is required' }, { status: 400 });
 		}
 
-		// Calculate start and end dates of the requested month
-		const startDate = new Date(`${monthParam}-01T00:00:00.000Z`);
-		const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999);
+		// Parse date range
+		const startDate = new Date(`${startDateParam}T00:00:00.000Z`);
+		const endDate = new Date(`${endDateParam}T23:59:59.999Z`);
 
 		// Get all user expenses for the given month
 		const userExpenses = await prisma.expense.findMany({

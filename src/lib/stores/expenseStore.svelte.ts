@@ -81,6 +81,9 @@ class ExpenseStore {
 	// refreshed explicitly after add/update category operations.
 	categoriesLoaded = $state(false);
 
+	// Dashboard date filter — start date (default: first of current month)
+	dashboardStartDate = $state('');
+
 	// Filters
 	searchQuery = $state('');
 	filterCategoryId = $state<number | null>(null);
@@ -105,6 +108,7 @@ class ExpenseStore {
 	weekTotal = $state(0);
 	monthTotal = $state(0);
 	yearTotal = $state(0);
+	dailyAverage = $state(0);
 
 	weeklyTrend = $state<{ label: string; amount: number }[]>([]);
 	monthlyCategoryBreakdown = $state<{ category_id: number; name: string; amount: number; color: string }[]>([]);
@@ -114,6 +118,10 @@ class ExpenseStore {
 	loading = $state(false);
 
 	constructor() {
+		// Set default dashboard start date to first of current month
+		const now = new Date();
+		this.dashboardStartDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
 		// Fetch initial metadata (categories, prefixes, stats) if authenticated (Client side).
 		// NOTE: fetchExpenses() is NOT called here — page components set filters first then call it.
 		if (typeof window !== 'undefined') {
@@ -194,16 +202,18 @@ class ExpenseStore {
 		}
 	}
 
-	// Fetch dashboard and trend stats
+	// Fetch dashboard and trend stats for the selected date range
 	async fetchStats() {
 		try {
 			const now = new Date();
-			const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+			const endDate = getLocalISODate(now);
+			const startDate = this.dashboardStartDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
 			const res = await api.get<{
 				totalSpent: number;
 				categoryDistribution: { category_id: number; name: string; amount: number; percentage: number }[];
 				dailyTrend: { date: string; amount: number }[];
-			}>(`/api/dashboard/stats?month=${monthStr}`);
+			}>(`/api/dashboard/stats?startDate=${startDate}&endDate=${endDate}`);
 
 			// Map monthlyCategoryBreakdown colors
 			const colors = ['#2A5A43', '#4D8B6C', '#83BA9B', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6', '#14B8A6'];
@@ -229,15 +239,15 @@ class ExpenseStore {
 			}
 			this.weeklyTrend = trend;
 
-			// Compute totals
+			// Range total
 			this.monthTotal = res.totalSpent;
 
-			// Fetch today total
+			// Today total
 			const t = today();
 			const todayMatch = res.dailyTrend.find(item => item.date === t);
 			this.todayTotal = todayMatch ? todayMatch.amount : 0;
 
-			// Fetch yesterday total
+			// Yesterday total
 			const yesterday = new Date();
 			yesterday.setDate(yesterday.getDate() - 1);
 			const yStr = getLocalISODate(yesterday);
@@ -249,6 +259,21 @@ class ExpenseStore {
 			} else {
 				this.todayChangePercent = ((this.todayTotal - this.yesterdayTotal) / this.yesterdayTotal) * 100;
 			}
+
+			// Compute weekTotal from dailyTrend (current week Mon-Sun)
+			const monday = getMonday(new Date());
+			const sunday = getSunday(new Date());
+			const mondayStr = getLocalISODate(monday);
+			const sundayStr = getLocalISODate(sunday);
+			this.weekTotal = res.dailyTrend
+				.filter(d => d.date >= mondayStr && d.date <= sundayStr)
+				.reduce((sum, d) => sum + d.amount, 0);
+
+			// Compute daily average for the selected range
+			const rangeStart = new Date(startDate + 'T00:00:00');
+			const rangeEnd = new Date(endDate + 'T00:00:00');
+			const daysDiff = Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+			this.dailyAverage = res.totalSpent / daysDiff;
 		} catch (err) {
 			console.error('Failed to fetch stats:', err);
 		}
