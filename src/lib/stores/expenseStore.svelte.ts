@@ -77,6 +77,10 @@ class ExpenseStore {
 	categories = $state<Category[]>([]);
 	prefixes = $state<ItemPrefix[]>([]);
 
+	// Cache flag — categories are loaded once after login and only
+	// refreshed explicitly after add/update category operations.
+	categoriesLoaded = $state(false);
+
 	// Filters
 	searchQuery = $state('');
 	filterCategoryId = $state<number | null>(null);
@@ -163,9 +167,15 @@ class ExpenseStore {
 	}
 
 	// Fetch categories
-	async fetchCategories() {
+	// Pass force=true to bypass the cache (e.g. after add/update category).
+	async fetchCategories(force = false) {
+		if (!force && this.categoriesLoaded) {
+			// Already loaded — skip network request
+			return;
+		}
 		try {
 			this.categories = await api.get<Category[]>('/api/categories');
+			this.categoriesLoaded = true;
 		} catch (err) {
 			console.error('Failed to fetch categories:', err);
 		}
@@ -304,7 +314,8 @@ class ExpenseStore {
 	async addCategory(name: string, monthlyLimit?: number | null) {
 		try {
 			const newCategory = await api.post<Category>('/api/categories', { name, monthlyLimit });
-			await this.fetchCategories();
+			// Force-refresh categories after adding a new one
+			await this.fetchCategories(true);
 			return newCategory;
 		} catch (err) {
 			console.error('Failed to add category:', err);
@@ -315,7 +326,8 @@ class ExpenseStore {
 	async updateCategory(id: number, name: string, monthlyLimit?: number | null) {
 		try {
 			const updated = await api.put<Category>(`/api/categories/${id}`, { name, monthlyLimit });
-			await this.fetchCategories();
+			// Force-refresh categories after editing
+			await this.fetchCategories(true);
 			await this.fetchStats();
 			return updated;
 		} catch (err) {
