@@ -6,6 +6,7 @@ declare module '@auth/sveltekit' {
 	interface Session {
 		user: {
 			id: string;
+			isAdmin?: boolean;
 		} & DefaultSession['user'];
 	}
 }

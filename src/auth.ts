@@ -24,6 +24,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		async session({ session, user }) {
 			if (session.user) {
 				session.user.id = user.id;
+				session.user.isAdmin = (user as any).isAdmin;
 			}
 			return session;
 		}
