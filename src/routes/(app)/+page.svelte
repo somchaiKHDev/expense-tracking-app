@@ -270,11 +270,11 @@
 
 	const budgetedCategories = $derived.by(() => {
 		return store.categories
-			.filter((c) => c.monthlyLimit !== null && c.monthlyLimit !== undefined && c.monthlyLimit > 0)
+			.filter((c) => c.monthlyLimit !== null && c.monthlyLimit !== undefined && Number(c.monthlyLimit) > 0)
 			.map((c) => {
-				const limit = c.monthlyLimit || 0;
+				const limit = Number(c.monthlyLimit) || 0;
 				const breakdown = store.monthlyCategoryBreakdown.find((b) => b.category_id === c.id);
-				const spent = breakdown ? breakdown.amount : 0;
+				const spent = breakdown ? Number(breakdown.amount) : 0;
 				const remaining = Math.max(0, limit - spent);
 				const percent = limit > 0 ? (spent / limit) * 100 : 0;
 
