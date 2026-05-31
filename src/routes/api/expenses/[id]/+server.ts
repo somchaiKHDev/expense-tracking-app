@@ -21,7 +21,8 @@ export const PUT: RequestHandler = async (event) => {
 			dataToUpdate.categoryId = body.category_id ? parseInt(body.category_id, 10) : null;
 		}
 		if (body.transaction_date !== undefined) {
-			dataToUpdate.transactionDate = new Date(body.transaction_date);
+			// Use T12:00:00Z (noon UTC) to avoid day-shift issues with @db.Date + timezone
+			dataToUpdate.transactionDate = new Date(`${body.transaction_date}T12:00:00.000Z`);
 		}
 
 		const updated = await prisma.expense.update({

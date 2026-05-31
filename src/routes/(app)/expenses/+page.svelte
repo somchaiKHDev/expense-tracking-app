@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { CategoryBadge, PaginationBar } from '$lib/components/expense';
 	import { Modal, Button } from '$lib/components/ui';
 	import { useExpenseStore, formatCurrency, type Expense, type SortField } from '$lib/stores/expenseStore.svelte';
@@ -77,14 +78,39 @@
 		}
 	}
 
-	function handleStartDate(e: Event) {
-		store.filterStartDate = (e.target as HTMLInputElement).value;
-		store.currentPage = 1;
+	// Month/Year picker — default to current month
+	const now = new Date();
+	const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+	let selectedMonth = $state(defaultMonth);
+
+	// Compute start/end dates from a YYYY-MM string
+	function monthToDateRange(monthValue: string): { start: string; end: string } {
+		const [year, month] = monthValue.split('-').map(Number);
+		const start = `${year}-${String(month).padStart(2, '0')}-01`;
+		const lastDay = new Date(year, month, 0).getDate();
+		const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+		return { start, end };
+	}
+
+	// Apply month filter immediately (synchronously) so the store
+	// already has the correct date range, then fetch expenses.
+	{
+		const { start, end } = monthToDateRange(defaultMonth);
+		store.filterStartDate = start;
+		store.filterEndDate = end;
 		store.fetchExpenses();
 	}
 
-	function handleEndDate(e: Event) {
-		store.filterEndDate = (e.target as HTMLInputElement).value;
+	function handleMonthChange(e: Event) {
+		selectedMonth = (e.target as HTMLInputElement).value;
+		if (!selectedMonth) {
+			store.filterStartDate = '';
+			store.filterEndDate = '';
+		} else {
+			const { start, end } = monthToDateRange(selectedMonth);
+			store.filterStartDate = start;
+			store.filterEndDate = end;
+		}
 		store.currentPage = 1;
 		store.fetchExpenses();
 	}
@@ -125,7 +151,7 @@
 			<p class="text-sm text-gray-500">จัดการ ค้นหา คัดกรอง และส่งออกรายงานรายการค่าใช้จ่าย</p>
 		</div>
 		<a
-			href="/add"
+			href={resolve('/add')}
 			class="bg-[#2A5A43] hover:bg-[#1F4332] text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors self-start md:self-auto flex items-center gap-2 no-underline"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -167,23 +193,16 @@
 					{/each}
 				</select>
 
-				<!-- Date range -->
+				<!-- Month/Year picker -->
 				<div class="flex items-center bg-gray-50 border border-gray-300 rounded-lg px-3 py-1.5">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
 						<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
 					</svg>
 					<input
-						type="date"
-						class="bg-transparent border-none text-sm focus:outline-none p-0 w-28 text-gray-600"
-						value={store.filterStartDate}
-						oninput={handleStartDate}
-					/>
-					<span class="text-sm text-gray-400 mx-2">ถึง</span>
-					<input
-						type="date"
-						class="bg-transparent border-none text-sm focus:outline-none p-0 w-28 text-gray-600"
-						value={store.filterEndDate}
-						oninput={handleEndDate}
+						type="month"
+						class="bg-transparent border-none text-sm focus:outline-none p-0 text-gray-600"
+						value={selectedMonth}
+						onchange={handleMonthChange}
 					/>
 				</div>
 

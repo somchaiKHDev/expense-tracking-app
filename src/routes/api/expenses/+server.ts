@@ -44,10 +44,11 @@ export const GET: RequestHandler = async (event) => {
 		if (startDate || endDate) {
 			whereClause.transactionDate = {};
 			if (startDate) {
-				whereClause.transactionDate.gte = new Date(startDate);
+				// Use T12:00:00Z (noon UTC) to avoid day-shift issues with @db.Date + timezone offsets
+				whereClause.transactionDate.gte = new Date(`${startDate}T12:00:00.000Z`);
 			}
 			if (endDate) {
-				whereClause.transactionDate.lte = new Date(endDate);
+				whereClause.transactionDate.lte = new Date(`${endDate}T12:00:00.000Z`);
 			}
 		}
 
@@ -105,7 +106,8 @@ export const POST: RequestHandler = async (event) => {
 				data: {
 					description,
 					amount: parseFloat(amount),
-					transactionDate: new Date(transaction_date),
+					// Use T12:00:00Z (noon UTC) to avoid day-shift issues with @db.Date + timezone
+					transactionDate: new Date(`${transaction_date}T12:00:00.000Z`),
 					userId: payload.userId,
 					categoryId: category_id ? parseInt(category_id, 10) : null
 				}

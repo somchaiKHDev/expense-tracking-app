@@ -113,20 +113,21 @@ class ExpenseStore {
 	loading = $state(false);
 
 	constructor() {
-		// Fetch initial data if authenticated (Client side)
+		// Fetch initial metadata (categories, prefixes, stats) if authenticated (Client side).
+		// NOTE: fetchExpenses() is NOT called here — page components set filters first then call it.
 		if (typeof window !== 'undefined') {
-			this.loadAll();
+			this.loadMetadata();
 		}
 	}
 
-	// Load everything from the backend APIs
-	async loadAll() {
+	// Load metadata only (categories, prefixes, stats) — does NOT fetch expenses.
+	// Pages should call fetchExpenses() themselves after setting any filters.
+	async loadMetadata() {
 		this.loading = true;
 		try {
 			await Promise.all([
 				this.fetchCategories(),
 				this.fetchPrefixes(),
-				this.fetchExpenses(),
 				this.fetchStats()
 			]);
 		} catch (err) {
