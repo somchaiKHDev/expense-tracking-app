@@ -5,7 +5,7 @@
 
 	async function handleGoogleLogin() {
 		isLoading = true;
-		await signIn('google', { callbackUrl: '/' });
+		await signIn('google', { callbackUrl: '/add' });
 	}
 </script>
 
